@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strongman Калкулатор</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>💪 STRONGMAN КАЛКУЛАТОР</h1>
+                <p class="subtitle">Управление и оценяване на състезания</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- State 1: No Event -->
+            <div id="state-no-event" class="state active">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <h2>⚡ Начало</h2>
+                    </div>
+                    <div class="section">
+                        <p class="info-text">Няма активно събитие. Създайте ново за да начнете!</p>
+                        <button class="btn-primary" onclick="showEventModal()">
+                            ➕ СЪЗДАЙ НОВО СЪБИТИЕ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- State 2: Event Active -->
+            <div id="state-event-active" class="state" style="display: none;">
+                <div class="panel left-panel">
+                    <div class="panel-header">
+                        <h2>⚡ СЪБИТИЕ</h2>
+                    </div>
+
+                    <!-- Event Info -->
+                    <div class="event-info">
+                        <div class="event-details">
+                            <h3 id="currentEventName"></h3>
+                            <p id="currentEventType"></p>
+                        </div>
+                    </div>
+
+                    <!-- Participants Section -->
+                    <div class="section">
+                        <h3>👥 Участници</h3>
+                        <div class="participants-list" id="participantsList"></div>
+                        <button class="btn-primary" onclick="showAddParticipantModal()">
+                            ➕ ДОБАВИ УЧАСТНИК
+                        </button>
+                    </div>
+
+                    <!-- Change Event Button -->
+                    <button class="btn-secondary" onclick="resetEvent()">Ново събитие</button>
+                </div>
+
+                <!-- Right Panel - Калкулатор -->
+                <div class="panel right-panel">
+                    <div class="panel-header">
+                        <h2>📊 РЕЗУЛТАТИ И КАЛКУЛАТОР</h2>
+                    </div>
+
+                    <!-- Input Section -->
+                    <div class="calculator-section">
+                        <h3>Въведи резултат</h3>
+                        
+                        <div class="form-group">
+                            <label>Участник:</label>
+                            <select id="participantSelect" class="input-field">
+                                <option value="">-- Избери участник --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="distanceGroup" style="display: none;">
+                            <label>Дистанция (м):</label>
+                            <input type="number" id="distanceInput" class="input-field" placeholder="0" min="0" step="0.01">
+                        </div>
+
+                        <div class="form-group" id="repetitionsGroup" style="display: none;">
+                            <label>Повторения:</label>
+                            <input type="number" id="repetitionsInput" class="input-field" placeholder="0" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Време (MM:SS.CC):</label>
+                            <div class="time-input-wrapper">
+                                <input type="number" id="minutesInput" class="time-input" placeholder="0" min="0" max="99">
+                                <span class="time-separator">:</span>
+                                <input type="number" id="secondsInput" class="time-input" placeholder="0" min="0" max="59">
+                                <span class="time-separator">.</span>
+                                <input type="number" id="centisInput" class="time-input" placeholder="0" min="0" max="99">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="submitResult()">
+                            ✅ РЕГИСТРИРАЙ РЕЗУЛТАТ
+                        </button>
+                    </div>
+
+                    <!-- Results Table -->
+                    <div class="calculator-section">
+                        <h3>Резултати от това събитие</h3>
+                        <div class="results-table">
+                            <div class="table-header">
+                                <div class="col-rank">Място</div>
+                                <div class="col-name">Участник</div>
+                                <div class="col-result">Резултат</div>
+                                <div class="col-points">Точки</div>
+                                <div class="col-action">Действие</div>
+                            </div>
+                            <div id="resultsBody"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Leaderboard (видима само когато има събитие) -->
+        <section class="leaderboard" id="leaderboardSection" style="display: none;">
+            <div class="leaderboard-header">
+                <h2>🥇 КЛАСИРАНЕ</h2>
+            </div>
+            <div class="leaderboard-table">
+                <div class="table-header">
+                    <div class="col-position">Позиция</div>
+                    <div class="col-name">Участник</div>
+                    <div class="col-total-points">ОБЩО ТОЧКИ</div>
+                </div>
+                <div id="leaderboardBody"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="eventModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ново събитие</h2>
+                <button class="close-btn" onclick="closeEventModal()">&times;</button>
+            </div>
+            <form onsubmit="return handleCreateEvent(event);">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Име на събитието:</label>
+                        <input type="text" id="eventNameInput" class="input-field" placeholder="напр. Deadlift Championship" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Тип упражнение:</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="eventType" value="distance" checked>
+                                📏 Дистанция + Време
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="eventType" value="reps">
+                                🔄 Повторения + Време
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeEventModal()">Отмени</button>
+                    <button type="submit" class="btn-primary">Създай събитие</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Participant Modal -->
+    <div id="participantModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Добави участник</h2>
+                <button class="close-btn" onclick="closeParticipantModal()">&times;</button>
+            </div>
+            <form onsubmit="return handleAddParticipant(event);">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Име на участника:</label>
+                        <input type="text" id="participantNameInput" class="input-field" placeholder="напр. Иван Петров" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeParticipantModal()">Отмени</button>
+                    <button type="submit" class="btn-primary">Добави</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
