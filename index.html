@@ -52,9 +52,14 @@
                     <div class="section">
                         <h3>👥 Участници</h3>
                         <div class="participants-list" id="participantsList"></div>
-                        <button class="btn-primary" onclick="showAddParticipantModal()">
-                            ➕ ДОБАВИ УЧАСТНИК
-                        </button>
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="showAddParticipantModal()">
+                                ➕ ДОБАВИ УЧАСТНИК
+                            </button>
+                            <button class="btn-secondary" onclick="showImportModal()">
+                                📤 ИМПОРТИРАЙ ОТ ФАЙЛ
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Change Event Button -->
@@ -193,6 +198,37 @@
                     <button type="submit" class="btn-primary">Добави</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Import Participants Modal -->
+    <div id="importModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Импортирай участници</h2>
+                <button class="close-btn" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Избери файл (CSV, TXT, или Excel):</label>
+                    <input type="file" id="importFileInput" class="input-field" accept=".csv,.txt,.xlsx,.xls,.json" />
+                    <p class="info-text" style="margin-top: 10px; font-size: 0.9em;">
+                        <strong>Поддържани формати:</strong><br>
+                        • CSV: име1,име2,име3<br>
+                        • TXT: един участник на ред<br>
+                        • JSON: {"participants": ["име1", "име2"]}<br>
+                        • EXCEL: колона с имена
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label>или въведи имена (всяко на нов ред):</label>
+                    <textarea id="importTextarea" class="input-field" placeholder="Иван Петров&#10;Мария Иванова&#10;Петър Крустев"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeImportModal()">Отмени</button>
+                <button type="button" class="btn-primary" onclick="handleImportParticipants()">Импортирай</button>
+            </div>
         </div>
     </div>
 

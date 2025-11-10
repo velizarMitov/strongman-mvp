@@ -198,6 +198,19 @@ body {
     box-shadow: 0 4px 15px rgba(239, 71, 111, 0.4);
 }
 
+/* Button Group */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.button-group button {
+    width: 100%;
+    margin-top: 0;
+}
+
 /* ===================================
    FORM ELEMENTS
    =================================== */
@@ -244,6 +257,20 @@ select option {
     color: var(--light-text);
 }
 
+textarea.input-field {
+    font-family: 'Courier New', monospace;
+    min-height: 100px;
+    padding: 12px;
+    border: 2px solid var(--primary-color);
+}
+
+textarea.input-field:focus {
+    outline: none;
+    background: rgba(255, 107, 53, 0.15);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+}
+
 /* Time Input Styling */
 .time-input-wrapper {
     display: flex;
@@ -286,7 +313,9 @@ select option {
 }
 
 .time-input[type=number] {
+    -webkit-appearance: textfield;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 .time-separator {

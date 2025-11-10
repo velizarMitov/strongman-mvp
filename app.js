@@ -464,18 +464,265 @@ function updateLeaderboard() {
 }
 
 // ===================================
+// IMPORT PARTICIPANTS
+// ===================================
+
+function showImportModal() {
+    console.log('showImportModal called');
+    
+    if (!app.currentEvent) {
+        alert('Трябва да създадеш събитие първо!');
+        return;
+    }
+    
+    const modal = document.getElementById('importModal');
+    const fileInput = document.getElementById('importFileInput');
+    const textarea = document.getElementById('importTextarea');
+    
+    if (!modal) {
+        console.error('Import modal not found!');
+        return;
+    }
+    
+    modal.style.display = 'flex';
+    
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    if (textarea) {
+        textarea.value = '';
+    }
+    
+    console.log('Import modal opened');
+}
+
+function closeImportModal() {
+    const modal = document.getElementById('importModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    const fileInput = document.getElementById('importFileInput');
+    const textarea = document.getElementById('importTextarea');
+    if (fileInput) fileInput.value = '';
+    if (textarea) textarea.value = '';
+}
+
+function handleImportParticipants() {
+    console.log('handleImportParticipants called');
+    
+    const fileInput = document.getElementById('importFileInput');
+    const textarea = document.getElementById('importTextarea');
+    
+    // Try file input first
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        console.log('File selected:', file.name, file.size, 'bytes');
+        
+        const reader = new FileReader();
+        
+        reader.onerror = function(error) {
+            console.error('FileReader error:', error);
+            alert('Грешка при четене на файла!');
+        };
+        
+        reader.onload = function(event) {
+            try {
+                console.log('File loaded successfully');
+                const content = event.target.result;
+                console.log('File content length:', content.length);
+                
+                const participants = parseFileContent(content, file.name);
+                console.log('Parsed participants:', participants.length);
+                
+                addMultipleParticipants(participants);
+            } catch (error) {
+                console.error('Error processing file:', error);
+                alert('Грешка при обработка на файла: ' + error.message);
+            }
+        };
+        
+        console.log('Starting to read file...');
+        reader.readAsText(file, 'UTF-8');
+        
+    } else if (textarea && textarea.value.trim()) {
+        // Use textarea input
+        console.log('Using textarea input');
+        const participants = parseTextareaContent(textarea.value);
+        addMultipleParticipants(participants);
+    } else {
+        alert('Моля, избери файл или въведи имена!');
+    }
+}
+
+function parseFileContent(content, fileName) {
+    console.log('parseFileContent - fileName:', fileName);
+    console.log('Content length:', content.length, 'bytes');
+    
+    const ext = fileName.toLowerCase().split('.').pop();
+    console.log('File extension detected:', ext);
+    
+    const names = [];
+    
+    if (ext === 'csv') {
+        console.log('Parsing as CSV');
+        // CSV format: comma or semicolon separated
+        const lines = content.split('\n');
+        lines.forEach((line, idx) => {
+            const items = line.split(/[,;]/).map(item => item.trim()).filter(item => item);
+            if (items.length > 0) {
+                console.log('Line', idx, '- Found items:', items);
+            }
+            names.push(...items);
+        });
+    } else if (ext === 'json') {
+        console.log('Parsing as JSON');
+        // JSON format
+        try {
+            const data = JSON.parse(content);
+            console.log('JSON parsed successfully');
+            
+            if (Array.isArray(data)) {
+                console.log('Found array with', data.length, 'items');
+                names.push(...data);
+            } else if (data.participants && Array.isArray(data.participants)) {
+                console.log('Found participants array with', data.participants.length, 'items');
+                names.push(...data.participants);
+            } else if (data.names && Array.isArray(data.names)) {
+                console.log('Found names array with', data.names.length, 'items');
+                names.push(...data.names);
+            } else {
+                console.warn('JSON format not recognized');
+                throw new Error('Неподдържан JSON формат. Очаквам масив или обект с "participants" или "names".\nUnsupported JSON format. Expected an array or an object with "participants" or "names".');
+            }
+        } catch (e) {
+            console.error('JSON parsing error:', e);
+            throw new Error('Невалиден JSON формат: ' + e.message);
+        }
+    } else {
+        console.log('Parsing as TXT/plain text');
+        // Text format: one per line
+        const lines = content.split('\n');
+        lines.forEach((line, idx) => {
+            const name = line.trim();
+            if (name) {
+                console.log('Line', idx, '- Found name:', name);
+                names.push(name);
+            }
+        });
+    }
+    
+    console.log('Total names parsed:', names.length);
+    return names;
+}
+
+function parseTextareaContent(content) {
+    console.log('parseTextareaContent');
+    
+    const lines = content.split('\n');
+    const names = [];
+    
+    lines.forEach(line => {
+        const name = line.trim();
+        if (name) {
+            // Split by comma if there are multiple names on one line
+            const items = name.split(',').map(item => item.trim()).filter(item => item);
+            names.push(...items);
+        }
+    });
+    
+    return names;
+}
+
+function addMultipleParticipants(names) {
+    console.log('addMultipleParticipants - total count:', names.length);
+    
+    if (!names || names.length === 0) {
+        alert('Няма намерени имена в файла!');
+        return;
+    }
+    
+    let addedCount = 0;
+    let duplicateCount = 0;
+    let errorCount = 0;
+
+    // Build a Set of lowercase participant names for fast duplicate checking
+    const existingNamesSet = new Set(app.participants.map(p => String(p.name).toLowerCase()));
+    
+    names.forEach((name, idx) => {
+        try {
+            name = String(name).trim();
+            
+            if (!name || name.length === 0) {
+                console.log('Item', idx, '- Empty name, skipping');
+                return;
+            }
+            
+            // Check for duplicates (case-insensitive) using the Set
+            const lowerName = name.toLowerCase();
+            if (existingNamesSet.has(lowerName)) {
+                console.warn('Item', idx, '- Duplicate name:', name);
+                duplicateCount++;
+                return;
+            }
+            
+            // Generate a unique ID by incrementing from the current max ID
+            const maxId = app.participants.length > 0 ? Math.max(...app.participants.map(p => p.id)) : 0;
+            const participant = {
+                id: maxId + 1,
+                name: name,
+                totalPoints: 0
+            };
+            
+            app.participants.push(participant);
+            existingNamesSet.add(lowerName);
+            addedCount++;
+            console.log('✅ Item', idx, '- Participant added:', participant);
+            
+        } catch (error) {
+            console.error('Item', idx, '- Error:', error);
+            errorCount++;
+        }
+    });
+    
+    console.log('Summary - Added:', addedCount, 'Duplicates:', duplicateCount, 'Errors:', errorCount);
+    
+    if (addedCount === 0) {
+        alert('Не бяха добавени участници! (Всички могат да бъдат дублирани)');
+        return;
+    }
+    
+    let message = `✅ Успешно добавени ${addedCount} участници`;
+    if (duplicateCount > 0) {
+        message += ` (${duplicateCount} дублирани пропуснати)`;
+    }
+    if (errorCount > 0) {
+        message += ` (${errorCount} грешки)`;
+    }
+    
+    console.log('Final message:', message);
+    alert(message);
+    
+    closeImportModal();
+    updateUI();
+}
+
+// ===================================
 // MODAL CLOSE ON OUTSIDE CLICK
 // ===================================
 
 window.addEventListener('click', function(event) {
     const eventModal = document.getElementById('eventModal');
     const participantModal = document.getElementById('participantModal');
+    const importModal = document.getElementById('importModal');
 
     if (event.target === eventModal) {
         closeEventModal();
     }
     if (event.target === participantModal) {
         closeParticipantModal();
+    }
+    if (event.target === importModal) {
+        closeImportModal();
     }
 });
 
